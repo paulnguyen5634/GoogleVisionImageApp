@@ -117,51 +117,6 @@ def add_text_in_box(image, text, box_coords, font_path, min_height_ratio=0.7, ma
         # Move to the next line
         y += line_height
 
-'''def add_text_in_box(image, text, box_coords, font_path, max_font_size=200):
-    draw = ImageDraw.Draw(image)
-    left, top, right, bottom = box_coords
-    box_width = max(right - left, 1)  # Ensure width is at least 1
-    box_height = bottom - top
-
-    # Start with the maximum font size and adjust downwards to fit within the box
-    font_size = max_font_size
-    while font_size > 10:  # Minimal font size for legibility
-        font = ImageFont.truetype(font_path, font_size)
-        
-        # Estimate max characters per line based on current font size and box width
-        max_chars_per_line = max(1, int(box_width / font.getlength(' ')))  
-        wrapped_text = textwrap.fill(text, width=max_chars_per_line)
-
-        # Calculate the width and height of the entire wrapped text
-        lines = wrapped_text.splitlines()
-        line_height = font.getbbox('A')[3] - font.getbbox('A')[1]  # Height of one line
-        total_text_height = line_height * len(lines)
-        
-        # Check if the text fits within both width and height constraints
-        if total_text_height <= box_height and all(font.getlength(line) <= box_width for line in lines):
-            break  # Font size fits within both dimensions, stop reducing
-        font_size -= 1  # Reduce font size and try again
-
-    # Re-check the font size to avoid unreadable text
-    if font_size < 10:
-        font_size = 10  # Set a minimum font size if the box is too small
-
-    # Final drawing with adjusted font size and wrapping
-    font = ImageFont.truetype(font_path, font_size)
-    wrapped_text = textwrap.fill(text, width=max(1, int(box_width / font.getlength(' '))))
-
-    # Draw the text, centered in the box
-    y = top + (box_height - total_text_height) // 2  # Vertically center the text
-    for line in wrapped_text.splitlines():
-        line_width = font.getlength(line)
-        x = left + (box_width - line_width) // 2  # Horizontally center each line
-        draw.text((x, y), line, font=font, fill="black")
-        y += line_height  # Move y-coordinate for the next line'''
-
-
-
-
-
 
 imagefldr = 'images'
 # folder of individual png's
