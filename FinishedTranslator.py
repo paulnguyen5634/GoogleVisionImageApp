@@ -1,4 +1,3 @@
-
 import os
 from google.cloud import vision
 import textwrap
