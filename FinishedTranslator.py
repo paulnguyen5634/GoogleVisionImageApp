@@ -345,8 +345,8 @@ for i in list_of_imgs:
                 break
 
         try:
-            print('selected_size')
-            print(selected_size)
+            '''print('selected_size')
+            print(selected_size)'''
             font = ImageFont.truetype(
                 font="font\\CC Wild Words Roman.ttf",
                 size=selected_size/1.75)
