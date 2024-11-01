@@ -239,9 +239,42 @@ for i in list_of_imgs:
     for box, text_list in dict_from_lists.items():
         # Calculate width and height based on box coordinates
         left, top, right, bottom = box
+        print('\n')
         print(box)
         width = right - left
         height = bottom - top
+
+        '''print('Width')
+        print(width)
+        print('Height')
+        print(height)'''
+
+        # Checking if the box is height biased
+        if 10*width < height:
+            # Lets do 10% width on each ends for a total of 20% increase in width
+            width_increase = width*2
+            left -= int((1/2)*width_increase)
+            right += int((1/2)*width_increase)
+            width = right - left
+            height = bottom - top
+
+            box = (left, top, right, bottom)
+            '''print('New Box')
+            print(box)
+            print('New Width')
+            print(width)
+            print('New Height')
+            print(height)'''
+
+        elif width < ((1/2)*height):
+            # Lets do 10% width on each ends for a total of 20% increase in width
+            width_increase = width*0.25
+            left -= int((1/2)*width_increase)
+            right += int((1/2)*width_increase)
+            width = right - left
+            height = bottom - top
+
+            box = (left, top, right, bottom)
 
         text = ' '.join(text_list)
         translated = GoogleTranslator(source='chinese (simplified)', target='english').translate(text)
