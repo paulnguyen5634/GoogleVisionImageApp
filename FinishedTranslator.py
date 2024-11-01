@@ -6,6 +6,10 @@ from PIL import Image, ImageDraw, ImageFont
 import math
 from deep_translator import GoogleTranslator, single_detection
 import time
+import nltk
+nltk.download('words')
+from nltk.corpus import words
+nltk_words = set(words.words())
 font_path = 'font\\CC Wild Words Roman.ttf'
 # Replace with your Google Cloud Vision API credentials
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'keys\\linear-enigma-328214-c41ea53b04ad.json'
@@ -117,296 +121,227 @@ def add_text_in_box(image, text, box_coords, font_path, min_height_ratio=0.7, ma
         # Move to the next line
         y += line_height
 
+def is_sentence_gibberish(sentence):
+    words_in_sentence = sentence.split()
+    valid_words_count = sum(1 for word in words_in_sentence if word.lower() in nltk_words)
+    return valid_words_count < len(words_in_sentence) * 0.5  # Threshold: less than 50% valid words
 
 imagefldr = 'images'
 # folder of individual png's
-fldrOfImages = 'Combined'
+fldrOfImages = 'Test Folder'
 
-image_path = os.path.join(imagefldr, fldrOfImages)
+fldrOfImages_path = os.path.join(imagefldr, fldrOfImages)
 
 # Create the directory
 # Define the folder path you want to create
-folder_path = f'{image_path}/translated'
+folder_path = f'{imagefldr}/translated'
 os.makedirs(folder_path, exist_ok=True)
 
-list_of_imgs = os.listdir(image_path)
+list_of_imgs = os.listdir(fldrOfImages_path)
 
 print("\nTranslating images...\n")
-for i in range(0,len(list_of_imgs)):
-#for i in range(0,10):
+for i in list_of_imgs:
+    print(i)
+
+    pathToImg = os.path.join(fldrOfImages_path, i)
+
+    # Do transformation on image
+    # Iterate over each box and draw the text inside
+    img = Image.open(pathToImg)
+
+    # Detect text
     try:
-        '''if i == 0 or i == 1 or i == 2 or i == 3 or i == 4:
-            pathToImg = os.path.join(image_path, list_of_imgs[i])
-            img = Image.open(pathToImg)
-
-            output_path = os.path.join(folder_path,list_of_imgs[i])
-            img.save(output_path)
-            continue'''
-        print(list_of_imgs[i])
-        pathToImg = os.path.join(image_path, list_of_imgs[i])
-
-        # Do transformation on image
-        # Iterate over each box and draw the text inside
-        img = Image.open(pathToImg)
-
-        # Detect text
         texts = detect_text(pathToImg)
-
-        # Combine bounding boxes with a threshold 
-        merged_boxes = []
-        for text in texts:
-            if texts.index(text) == 0:
-                continue
-            vertices = text.bounding_poly.vertices
-            x_min, y_min = vertices[0].x, vertices[0].y
-            x_max, y_max = vertices[2].x, vertices[2].y
-
-            # Ensure y_min is always the top coordinate
-            if y_min > y_max:
-                y_min, y_max = y_max, y_min
-            if x_min > x_max:
-                x_min, x_max = x_max, x_min
-
-            # Check if the box can be merged with an existing merged box
-            merged = False
-            for mbox in merged_boxes:
-                pixLength = 50  # Lower the threshold for closer boxes
-
-                # Merge condition: boxes should either be overlapping or close enough
-                if (mbox[0] <= x_max + pixLength and mbox[2] >= x_min - pixLength) and \
-                (mbox[1] <= y_max + pixLength and mbox[3] >= y_min - pixLength):
-                    # Update the merged box to encompass both areas
-                    mbox[0] = min(x_min, mbox[0])
-                    mbox[1] = min(y_min, mbox[1])
-                    mbox[2] = max(x_max, mbox[2])
-                    mbox[3] = max(y_max, mbox[3])
-                    merged = True
-                    break
-
-            if not merged:
-                merged_boxes.append([x_min, y_min, x_max, y_max])
-
-        # Refine the combination to ensure no overlapping or redundant boxes
-        combined_boxes = []
-        for box in merged_boxes:
-            combined = False
-            for cbox in combined_boxes:
-                if box[0] >= cbox[0] and box[1] >= cbox[1] and \
-                box[2] <= cbox[2] and box[3] <= cbox[3]:
-                    combined = True
-                    break
-
-            if not combined:
-                combined_boxes.append(box)
-
-        # Draw combined boxes
-        draw = ImageDraw.Draw(img)
-        for box in combined_boxes:
-            # Draw the final rectangles on the image
-            draw.rectangle(box, outline='white', fill = 'white', width=2)
-        # Save the image with combined boxes
-
-        # Convert list of lists to a dictionary with keys as tuples and values as empty lists
-        dict_from_lists = {tuple(lst): [] for lst in combined_boxes}
-
-        for text in texts:
-            if texts.index(text) == 0:
-                continue
-
-            vertices = text.bounding_poly.vertices
-            # Top Left point of BB
-            x_min, y_min = vertices[0].x, vertices[0].y
-            # Bottom right point of BB
-            x_max, y_max = vertices[2].x, vertices[2].y
-            # BB of the detexted character
-            character = text.description
-            characterBB = (x_min, y_min, x_max, y_max)
-
-            enclosing_box = find_enclosing_box(combined_boxes, characterBB)
-            enclosing_box = tuple(enclosing_box)
-
-            dict_from_lists[enclosing_box].append(character)
-
-        percentageChange = 0.30
-        for box in dict_from_lists:
-            # Calculate width and height based on box coordinates
-            left, top, right, bottom = box
-            width = right - left
-            height = bottom - top
-
-            # Calculate how much to change the left and right sides (5% increase on each side)
-            change = int(.25 * width)
-            
-            # Adjust left and right coordinates to expand the box
-            new_left = left - change
-            new_right = right + change
-
-            # Draw rectangle with adjusted width
-            #draw.rectangle([new_left, top, new_right, bottom], fill='white', outline='black')
-
-        for box, text_list in dict_from_lists.items():
-            # Update the box coordinates to use the new width
-            left, top, right, bottom = box
-            width = right - left
-            change = int(percentageChange * width)
-            
-            # Adjust left and right to expand the box equally on both sides
-            new_left = left - change
-            new_right = right + change
-            adjusted_box = (new_left, top, new_right, bottom)
-            
-            # Join the text list into a single string
-            text = ' '.join(text_list)
-            translated = GoogleTranslator(source='chinese (simplified)', target='english').translate(text)
-
-            print(translated)
-
-            if translated is None:
-                continue
-            elif len(translated) == 1:
-                continue
-
-            # Call the add_text_in_box function to draw the text in the expanded box
-            add_text_in_box(img, translated, adjusted_box, font_path)
-
-        output_path = os.path.join(folder_path,list_of_imgs[i])
-        img.save(output_path)
     except:
+        print('DNS Error')
         time.sleep(5)
-        '''if i == 0:
-            pathToImg = os.path.join(image_path, list_of_imgs[i])
-            img = Image.open(pathToImg)
-
-            output_path = os.path.join(folder_path,list_of_imgs[i])
-            img.save(output_path)'''
-        print(list_of_imgs[i])
-        pathToImg = os.path.join(image_path, list_of_imgs[i])
-
-        # Do transformation on image
-        # Iterate over each box and draw the text inside
-        img = Image.open(pathToImg)
-
-        # Detect text
         texts = detect_text(pathToImg)
 
-        # Combine bounding boxes with a threshold 
-        merged_boxes = []
-        for text in texts:
-            if texts.index(text) == 0:
-                continue
-            vertices = text.bounding_poly.vertices
-            x_min, y_min = vertices[0].x, vertices[0].y
-            x_max, y_max = vertices[2].x, vertices[2].y
+    # Combine bounding boxes with a threshold 
+    merged_boxes = []
 
-            # Ensure y_min is always the top coordinate
-            if y_min > y_max:
-                y_min, y_max = y_max, y_min
-            if x_min > x_max:
-                x_min, x_max = x_max, x_min
+    for text in texts:
+        if texts.index(text) == 0:
+            continue
+        vertices = text.bounding_poly.vertices
+        x_min, y_min = vertices[0].x, vertices[0].y
+        x_max, y_max = vertices[2].x, vertices[2].y
 
-            # Check if the box can be merged with an existing merged box
-            merged = False
-            for mbox in merged_boxes:
-                pixLength = 50  # Lower the threshold for closer boxes
+        # Ensure y_min is always the top coordinate
+        if y_min > y_max:
+            y_min, y_max = y_max, y_min
+        if x_min > x_max:
+            x_min, x_max = x_max, x_min
 
-                # Merge condition: boxes should either be overlapping or close enough
-                if (mbox[0] <= x_max + pixLength and mbox[2] >= x_min - pixLength) and \
-                (mbox[1] <= y_max + pixLength and mbox[3] >= y_min - pixLength):
-                    # Update the merged box to encompass both areas
-                    mbox[0] = min(x_min, mbox[0])
-                    mbox[1] = min(y_min, mbox[1])
-                    mbox[2] = max(x_max, mbox[2])
-                    mbox[3] = max(y_max, mbox[3])
-                    merged = True
-                    break
+        # Check if the box can be merged with an existing merged box
+        merged = False
+        for mbox in merged_boxes:
+            pixLength = 50  # Lower the threshold for closer boxes
 
-            if not merged:
-                merged_boxes.append([x_min, y_min, x_max, y_max])
+            # Merge condition: boxes should either be overlapping or close enough
+            if (mbox[0] <= x_max + pixLength and mbox[2] >= x_min - pixLength) and \
+            (mbox[1] <= y_max + pixLength and mbox[3] >= y_min - pixLength):
+                # Update the merged box to encompass both areas
+                mbox[0] = min(x_min, mbox[0])
+                mbox[1] = min(y_min, mbox[1])
+                mbox[2] = max(x_max, mbox[2])
+                mbox[3] = max(y_max, mbox[3])
+                merged = True
+                break
 
-        # Refine the combination to ensure no overlapping or redundant boxes
-        combined_boxes = []
-        for box in merged_boxes:
-            combined = False
-            for cbox in combined_boxes:
-                if box[0] >= cbox[0] and box[1] >= cbox[1] and \
-                box[2] <= cbox[2] and box[3] <= cbox[3]:
-                    combined = True
-                    break
+        if not merged:
+            merged_boxes.append([x_min, y_min, x_max, y_max])
 
-            if not combined:
-                combined_boxes.append(box)
+    # Refine the combination to ensure no overlapping or redundant boxes
+    combined_boxes = []
+    for box in merged_boxes:
+        combined = False
+        for cbox in combined_boxes:
+            if box[0] >= cbox[0] and box[1] >= cbox[1] and \
+            box[2] <= cbox[2] and box[3] <= cbox[3]:
+                combined = True
+                break
 
-        # Draw combined boxes
-        draw = ImageDraw.Draw(img)
-        for box in combined_boxes:
-            # Draw the final rectangles on the image
-            draw.rectangle(box, outline='white', fill = 'white', width=2)
-        # Save the image with combined boxes
+        if not combined:
+            combined_boxes.append(box)
 
-        # Convert list of lists to a dictionary with keys as tuples and values as empty lists
-        dict_from_lists = {tuple(lst): [] for lst in combined_boxes}
 
-        for text in texts:
-            if texts.index(text) == 0:
-                continue
 
-            vertices = text.bounding_poly.vertices
-            # Top Left point of BB
-            x_min, y_min = vertices[0].x, vertices[0].y
-            # Bottom right point of BB
-            x_max, y_max = vertices[2].x, vertices[2].y
-            # BB of the detexted character
-            character = text.description
-            characterBB = (x_min, y_min, x_max, y_max)
 
-            enclosing_box = find_enclosing_box(combined_boxes, characterBB)
-            enclosing_box = tuple(enclosing_box)
+    # Convert list of lists to a dictionary with keys as tuples and values as empty lists
+    dict_from_lists = {tuple(lst): [] for lst in combined_boxes}
 
-            dict_from_lists[enclosing_box].append(character)
+    for text in texts:
+        if texts.index(text) == 0:
+            continue
 
-        percentageChange = 0.30
-        for box in dict_from_lists:
-            # Calculate width and height based on box coordinates
-            left, top, right, bottom = box
-            width = right - left
-            height = bottom - top
+        vertices = text.bounding_poly.vertices
+        # Top Left point of BB
+        x_min, y_min = vertices[0].x, vertices[0].y
+        # Bottom right point of BB
+        x_max, y_max = vertices[2].x, vertices[2].y
+        # BB of the detexted character
+        character = text.description
+        characterBB = (x_min, y_min, x_max, y_max)
 
-            # Calculate how much to change the left and right sides (5% increase on each side)
-            change = int(.25 * width)
-            
-            # Adjust left and right coordinates to expand the box
-            new_left = left - change
-            new_right = right + change
+        enclosing_box = find_enclosing_box(combined_boxes, characterBB)
+        enclosing_box = tuple(enclosing_box)
 
-            # Draw rectangle with adjusted width
-            #draw.rectangle([new_left, top, new_right, bottom], fill='white', outline='black')
+        dict_from_lists[enclosing_box].append(character)
 
-        for box, text_list in dict_from_lists.items():
-            # Update the box coordinates to use the new width
-            left, top, right, bottom = box
-            width = right - left
-            change = int(percentageChange * width)
-            
-            # Adjust left and right to expand the box equally on both sides
-            new_left = left - change
-            new_right = right + change
-            adjusted_box = (new_left, top, new_right, bottom)
-            
-            # Join the text list into a single string
-            text = ' '.join(text_list)
-            translated = GoogleTranslator(source='chinese (simplified)', target='english').translate(text)
+    # Draw combined boxes
+    draw = ImageDraw.Draw(img)
 
+    '''for box in combined_boxes:
+        # Draw the final rectangles on the image
+        draw.rectangle(box, outline='white', fill = 'white', width=2)'''
+    # Save the image with combined boxes
+
+    for box, text_list in dict_from_lists.items():
+        # Calculate width and height based on box coordinates
+        left, top, right, bottom = box
+        print(box)
+        width = right - left
+        height = bottom - top
+
+        text = ' '.join(text_list)
+        translated = GoogleTranslator(source='chinese (simplified)', target='english').translate(text)
+
+        if translated is None:
+            print('Len is None')
+            continue
+        elif len(translated) < 4:
+            print('Smaller than alloited')
             print(translated)
+            continue
+        elif translated.isdigit():
+            print("Returned a Digit")
+            print(translated)
+            continue
+        elif is_sentence_gibberish(translated) == True:
+            print('Sentence is gibberish')
+            print(translated)
+            continue
 
-            if translated is None:
-                continue
-            elif len(translated) == 1:
-                continue
+        # If text is all good, draw box
+        draw.rectangle(box, outline='white', fill = 'white', width=2)
 
-            # Call the add_text_in_box function to draw the text in the expanded box
-            add_text_in_box(img, translated, adjusted_box, font_path)
+        print(translated)
+        selected_size = 0
+        #font = ImageFont.truetype(font="font\\CC Wild Words Roman.ttf", size=size)
 
-        output_path = os.path.join(folder_path,list_of_imgs[i])
-        img.save(output_path)
+        print('Getting font size')
+        for size in range(1, 500):
+            # Try except block to find the selected size of the font 
+            try:
+                font = ImageFont.truetype(
+                    font="font\\CC Wild Words Roman.ttf",
+                    size=size)
+                textBox_singlelined = font.getbbox(translated)
 
-print('Finished')
+                single_Length = abs(textBox_singlelined[0] - textBox_singlelined[2])
+                avg_char_width_using_getbbox = single_Length / len(translated)
+
+                max_char_count_Using_getbbox = int((width * .95) / avg_char_width_using_getbbox)
+
+                
+                text_wrapped = textwrap.fill(text=text, width=max_char_count_Using_getbbox)
+
+                current_lines = math.ceil(len(text) / max_char_count_Using_getbbox)
+
+                textBox_multilined = draw.multiline_textbbox(
+                    # img testing
+                    xy=(img.size[0] / 2, img.size[1] / 2),
+                    text=text_wrapped,
+                    font=font,
+                    anchor='mm',
+                    align='center')
+                #print(textBox_multilined)
+
+                Multi_Length = abs(textBox_multilined[0] - textBox_multilined[2])
+                Multi_Height = abs(textBox_multilined[1] - textBox_multilined[3])
+
+                height_PerLine = Multi_Height / current_lines
+
+                if Multi_Length > width * .7 and Multi_Height > height * .9:
+                    break
+
+                selected_size += 1
+
+            except ValueError:
+                print('ValueError: invalid width 0 (must be > 0)')
+                break
+
+        try:
+            print('selected_size')
+            print(selected_size)
+            font = ImageFont.truetype(
+                font="font\\CC Wild Words Roman.ttf",
+                size=selected_size/1.75)
+            textBox_singlelined = font.getbbox(translated)
+            single_Length = abs(textBox_singlelined[0] - textBox_singlelined[2])
+            avg_char_width_using_getbbox = single_Length / len(translated)
+            max_char_count_Using_getbbox = int((width * .95) / avg_char_width_using_getbbox)
+
+            text_wrapped = textwrap.fill(text=translated, width=max_char_count_Using_getbbox)
+            draw.text(
+                xy=(((box[0]+box[2])/2),
+                    ((box[1]+box[3])/2)),
+                text=text_wrapped,
+                font=font,
+                fill='black',
+                anchor='mm',
+                align='center')
+            
+        except:
+            print('break')
+            continue
+
+    #img.show()
+
+    save_path = os.path.join(imagefldr,'translated',i)
+    img.save(save_path)
+
+
+
+    
