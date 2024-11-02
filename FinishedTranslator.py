@@ -129,7 +129,7 @@ def is_sentence_gibberish(sentence):
 # printing all files in the images folder for user to pick from
 # This is where we will look to find pdf's to translate
 cwd = os.getcwd()
-untranslated_pdf_folder = 'images'
+untranslated_pdf_folder = 'ProcessingQueue'
 path_to_imagefldr = os.path.join(cwd, untranslated_pdf_folder)
 
 # Path to pdf to be converted
