@@ -8,10 +8,10 @@ import re
 
 def folderfiles(folder_name):
     '''
-    Returns CSV path of desired file Shows to the user what files are in the
-    directory and from there the user can choose which file will be modified
+    Looks into the path of the named folder and outputs a list of files/folder in the directory. Function
+    then asks the user which file/folder is desired and return the path to that particular item.
 
-    Return: A path to the CSV requested from user
+    Return: The path to the desired file/folder
     '''
 
     # Goes into the directory of current python file

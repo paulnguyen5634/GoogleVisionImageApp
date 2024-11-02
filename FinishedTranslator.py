@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 import math
 from deep_translator import GoogleTranslator, single_detection
 import time
+from functions import createFolder, folderfiles
 import nltk
 nltk.download('words')
 from nltk.corpus import words
@@ -124,6 +125,18 @@ def is_sentence_gibberish(sentence):
     words_in_sentence = sentence.split()
     valid_words_count = sum(1 for word in words_in_sentence if word.lower() in nltk_words)
     return valid_words_count < len(words_in_sentence) * 0.5  # Threshold: less than 50% valid words
+
+# printing all files in the images folder for user to pick from
+# This is where we will look to find pdf's to translate
+cwd = os.getcwd()
+untranslated_pdf_folder = 'images'
+path_to_imagefldr = os.path.join(cwd, untranslated_pdf_folder)
+
+# Path to pdf to be converted
+user_requested_path = folderfiles(untranslated_pdf_folder)
+
+
+
 
 imagefldr = 'images'
 # folder of individual png's
