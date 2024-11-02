@@ -67,7 +67,7 @@ def folderfiles(folder_name):
             sys.exit(0)
             break
 
-    return folder_path
+    return folder_path, filename
 
 def createFolder(img_path):
     '''
