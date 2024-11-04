@@ -77,7 +77,6 @@ path_to_imagefldr = os.path.join(cwd, queueFldr)
 # Path to item to be transformed
 user_requested_path, filename = folderfiles(queueFldr)
 
-pdf_name = "Ling Xue's Old Friend 1.pdf"
 filename_only = filename[:-4]
 print(filename)
 
@@ -87,6 +86,9 @@ folder_path = f'transformed/Split/{filename_only}'
 os.makedirs(folder_path, exist_ok=True)
 
 convert_pdf_to_image(f"{path_to_imagefldr}/{filename}", filename_only, folder_path)
+
+# Move a file
+shutil.move(user_requested_path, 'ProcessedArchive')
 
 
 
