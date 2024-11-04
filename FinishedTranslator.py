@@ -1,5 +1,6 @@
 import os
 import shutil
+import requests
 from google.cloud import vision
 import textwrap
 from PIL import Image, ImageDraw, ImageFont
@@ -123,14 +124,14 @@ def add_text_in_box(image, text, box_coords, font_path, min_height_ratio=0.7, ma
         y += line_height
 
 def is_sentence_gibberish(sentence):
-    common_interjections = {"uh", "huh", "woo", "oh", "ah", '...'}
+    common_interjections = {"uh", "huh", "woo", "oh", "ah", '...', 'Hmm'}
 
     words_in_sentence = sentence.split()
     valid_words_count = sum(
         1 for word in words_in_sentence 
         if word.lower() in nltk_words or word.lower() in common_interjections
     )
-    return valid_words_count < len(words_in_sentence) * 0.25  # Adjusted threshold to 50%
+    return valid_words_count < len(words_in_sentence) * 0.1  # Adjusted threshold to 50%
 
 
 def main():
@@ -285,7 +286,14 @@ def main():
                 box = (left, top, right, bottom)
 
             text = ' '.join(text_list)
-            translated = GoogleTranslator(source='chinese (simplified)', target='english').translate(text)
+
+            while True:
+                try:
+                    translated = GoogleTranslator(source='chinese (simplified)', target='english').translate(text)
+                    break
+                except requests.exceptions.ConnectionError as e:
+                    print("Connection error: Unable to reach Google Translate API")
+                    time.sleep(2)
 
             if translated is None:
                 print('Len is None')
