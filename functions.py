@@ -141,3 +141,7 @@ def end_timer(start_time):
     fin_time = str(end_time - start_time)
     a = datetime.strptime(fin_time, "%H:%M:%S.%f")
     print(f'It took {a.hour} hrs, {a.minute} mins, {a.second} seconds, {a.microsecond} microseconds to finish')
+
+def move_to_processedArchive(user_requested_path):
+    # Move a file
+    shutil.move(user_requested_path, 'ProcessedArchive')
