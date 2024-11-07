@@ -2,6 +2,7 @@
 #from split_PDF import split_pdf
 from merge_images import mergeIMGS
 from functions import createFolder, folderfiles, move_to_processedArchive
+from format_images import convert_pdf_to_image
 import os
 
 def main():
@@ -15,8 +16,9 @@ def main():
 
     print("PDF Manipulation App")
     print("1. Merge Images")
-    print("2. Translate Images")
-    print("3. Split PDF")
+    print("2. Format PDF Images")
+    print("3. Translate Images")
+    print("4. Split PDF")
 
     user_action = input("Choose an action: ")
 
@@ -26,8 +28,13 @@ def main():
         print("Merging Images...")
         mergeIMGS(user_requested_path, filename)
         move_to_processedArchive(user_requested_path)
-    #elif choice == '2':
-        #split_pdf()
+    elif user_action == '2':
+        user_requested_path, filename = folderfiles(queueFldr)
+        print("Formatting Images...")
+
+        folder_path = f'transformed/Formatted/{filename}_formatted'
+        os.makedirs(folder_path, exist_ok=True)
+        convert_pdf_to_image(user_requested_path, folder_path)
     else:
         print("Invalid choice. Please try again.")
 
