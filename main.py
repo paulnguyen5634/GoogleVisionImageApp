@@ -15,9 +15,9 @@ def main():
     }
 
     print("PDF Manipulation App")
-    print("1. Translate PDF")
-    print("2. Split PDF")
-    print("3. Merge PDFs")
+    print("1. Merge Images")
+    print("2. Translate Images")
+    print("3. Split PDF")
 
     user_action = input("Choose an action: ")
 
@@ -26,7 +26,9 @@ def main():
     if user_action == '1':
         # Path to item to be transformed
         user_requested_path, filename = folderfiles(queueFldr)
+        print("Merging Images")
         mergeIMGS(user_requested_path, filename)
+        move_to_processedArchive(user_requested_path)
     #elif choice == '2':
         #split_pdf()
     else:

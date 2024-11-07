@@ -145,7 +145,7 @@ def main():
     user_requested_path, filename = folderfiles(queueFldr)
 
     # Create a folder where the images that are transformed will be saved
-    folder_path = f'transformed/translated/{filename}'
+    folder_path = f'transformed/translated/{filename}_translated'
     os.makedirs(folder_path, exist_ok=True)
 
     list_of_imgs = os.listdir(user_requested_path)
