@@ -5,7 +5,6 @@ from functions import createFolder, folderfiles, move_to_processedArchive
 import os
 
 def main():
-
     cwd = os.getcwd()
     queueFldr = 'ProcessingQueue'
     path_to_imagefldr = os.path.join(cwd, queueFldr)
@@ -21,28 +20,16 @@ def main():
 
     user_action = input("Choose an action: ")
 
-    
-
     if user_action == '1':
         # Path to item to be transformed
         user_requested_path, filename = folderfiles(queueFldr)
-        print("Merging Images")
+        print("Merging Images...")
         mergeIMGS(user_requested_path, filename)
         move_to_processedArchive(user_requested_path)
     #elif choice == '2':
         #split_pdf()
     else:
         print("Invalid choice. Please try again.")
-    
-    
-
-    '''
-    
-    choice = input("Choose an action (1, 2, or 3): ")
-
-    # Dictionary to map choices to functions
-    
-    '''
 
 if __name__ == "__main__":
     main()
