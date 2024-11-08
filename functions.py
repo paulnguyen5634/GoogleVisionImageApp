@@ -66,7 +66,7 @@ def folderfiles(folder_name):
             print('Stopping Program')
             sys.exit(0)
             break
-
+    
     return folder_path, filename
 
 def createFolder(img_path):

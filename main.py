@@ -1,6 +1,6 @@
 from merge_images import mergeIMGS
 from functions import createFolder, folderfiles, move_to_processedArchive
-from format_images import convert_pdf_to_image
+from format_images import convert_pdf_to_image, convert_pdf_to_image_and_back, format_images_and_merge_to_pdf
 import os
 
 def main():
@@ -16,11 +16,22 @@ def main():
 
     def format_images_action():
         user_requested_path, filename = folderfiles(queueFldr)
+        output_pdf_path = f'transformed/Formatted/{filename}_formatted.pdf'
+
+        # If the file is a pdf, split the pdf -> format -> merge back
+        if filename[-4:] == '.pdf':
+            filename = filename[:-4]
+            print("Formatting Images...")
+            convert_pdf_to_image_and_back(user_requested_path, output_pdf_path)
+            move_to_processedArchive(user_requested_path)
+            return
+
         print("Formatting Images...")
-        folder_path = f'transformed/Formatted/{filename}_formatted'
-        os.makedirs(folder_path, exist_ok=True)
-        convert_pdf_to_image(user_requested_path, folder_path)
+        format_images_and_merge_to_pdf(user_requested_path, output_pdf_path)
         move_to_processedArchive(user_requested_path)
+        return
+    
+
 
     actions = {
         '1': merge_images_action,
