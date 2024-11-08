@@ -22,7 +22,7 @@ def convert_pdf_to_image(fic, save_folder_path):
         for page in tqdm(doc):
             dim = page.get_pixmap()
 
-            if dim.width < 2880:
+            if dim.width >= 2200:
                 zoom = 1600 / (dim.width)
                 # zoom = 4    # zoom factor
                 mat = fitz.Matrix(zoom, zoom)
@@ -32,14 +32,6 @@ def convert_pdf_to_image(fic, save_folder_path):
                 pix.save(f"{save_folder_path}\%i.png" % page.number)
 
                 #pix.save(f"{filename}\%i.png" % page.number)
-            elif dim.width > 2880:
-                zoom = 1600 / (dim.width)  
-                # zoom = 4    # zoom factor
-                mat = fitz.Matrix(zoom, zoom)
-                # pix = page.getPixmap(matrix = mat, <...>)
-                pix = page.get_pixmap(matrix=mat)
-
-                pix.save(f"{save_folder_path}\%i.png" % page.number)
             else:
                 pix = page.get_pixmap()
                 # Save individual images to folder of same name as pdf name
