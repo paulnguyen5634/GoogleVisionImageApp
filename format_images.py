@@ -34,13 +34,13 @@ def convert_pdf_to_image(fic, save_folder_path):
                 # pix = page.getPixmap(matrix = mat, <...>)
                 pix = page.get_pixmap(matrix=mat)
 
-                pix.save(f"{save_folder_path}\%i.png" % page.number)
+                pix.save(f"{save_folder_path}/%i.png" % page.number)
 
                 #pix.save(f"{filename}\%i.png" % page.number)
             else:
                 pix = page.get_pixmap()
                 # Save individual images to folder of same name as pdf name
-                pix.save(f"{save_folder_path}\%i.png" % page.number)
+                pix.save(f"{save_folder_path}/%i.png" % page.number)
                 #pix.save(f"{filename}\%i.png" % page.number)
 
         print('PDF has been converted')
@@ -73,7 +73,7 @@ def convert_pdf_to_image_and_back(fic, output_pdf_path):
 
             # Resize the image if it's too large
             if dim.width >= 2200:
-                zoom = 1600 / dim.width
+                zoom = 1800 / dim.width
                 mat = fitz.Matrix(zoom, zoom)
                 pix = page.get_pixmap(matrix=mat)
             else:
@@ -130,8 +130,15 @@ def format_images_and_merge_to_pdf(image_folder_path, output_pdf_path):
             # Open the image file
             img = Image.open(image_path)
 
-            # Convert to RGB and resize the image
+            # Convert to RGB
             img = img.convert("RGB")
+
+            # Resize the image if it's too large (similar to the first function)
+            if img.width >= 2200:
+                new_width = 1800
+                scale_factor = new_width / img.width
+                new_height = int(img.height * scale_factor)
+                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
             # Append the formatted image to the list
             images.append(img)

@@ -31,9 +31,14 @@ def main():
         move_to_processedArchive(user_requested_path)
         return
     
+    def exit_action():
+        print("Exiting the app. Goodbye!")
+        exit()  # Exits the program
+    
 
 
     actions = {
+        '0': exit_action,
         '1': merge_images_action,
         '2': format_images_action,
         # Add additional actions here as needed, such as:
@@ -41,20 +46,27 @@ def main():
         # '4': split_pdf_action,
     }
 
-    print("PDF Manipulation App")
-    print("1. Merge Images")
-    print("2. Format PDF Images")
-    print("3. Translate Images")
-    print("4. Split PDF")
+    while True:
+        try:
+            print("\nPDF Manipulation App")
+            print("1. Merge Images")
+            print("2. Format PDF Images")
+            print("3. Translate Images")
+            print("4. Split PDF")
+            print("0. Exit")
 
-    user_action = input("Choose an action: ")
+            user_action = input("Choose an action: ")
 
-    # Execute the chosen action or handle invalid choice
-    action = actions.get(user_action)
-    if action:
-        action()
-    else:
-        print("Invalid choice. Please try again.")
+            # Execute the chosen action or handle invalid choice
+            action = actions.get(user_action)
+            if action:
+                action()
+            else:
+                print("Invalid choice. Please try again.")
+
+        except KeyboardInterrupt:
+            print("\nOperation interrupted. Exiting the app. Goodbye!")
+            break
 
 if __name__ == "__main__":
     main()
