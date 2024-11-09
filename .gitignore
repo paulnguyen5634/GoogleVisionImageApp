@@ -1,13 +1,5 @@
 images
 keys
-boundingBoxes.py
-combinedBoxesFix.py
-contextRegions.py
-easyOCRTextRegion.py
-extractText.py
 FinishedTranslation2.py
 randomCode.py
-drawingTextTest.py
-iterating_images.py
-drawingTextTest.py
 myenv/
