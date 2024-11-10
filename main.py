@@ -37,17 +37,19 @@ def main():
         
         # If the file is a pdf, split the pdf -> format -> merge back
         if filename[-4:] == '.pdf':
-            filename = filename[:-4]
-            output_pdf_path = f'transformed/Translated/{filename}_translated.pdf'
+            filename_out = filename[:-4]
+            output_pdf_path = f'transformed/Translated/{filename_out}_translated.pdf'
             print("Translating Images...")
             modified_png_lst = translate_images(user_requested_path, filename)
             convert_images_to_pdf_and_merge(modified_png_lst, filename, output_pdf_path)
+            move_to_processedArchive(user_requested_path)
             return
         
         output_pdf_path = f'transformed/Translated/{filename}_translated.pdf'
         print("Translating Images...")
         modified_png_lst = translate_images(user_requested_path, filename)
         convert_images_to_pdf_and_merge(modified_png_lst, filename, output_pdf_path)
+        move_to_processedArchive(user_requested_path)
         return
     
     def exit_action():
