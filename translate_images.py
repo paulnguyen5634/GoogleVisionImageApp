@@ -13,7 +13,7 @@ from deep_translator import GoogleTranslator, single_detection
 import time
 from functions import createFolder, folderfiles
 import nltk
-nltk.download('words')
+# nltk.download('words')
 from nltk.corpus import words
 nltk_words = set(words.words())
 font_path = 'font\\CC Wild Words Roman.ttf'
