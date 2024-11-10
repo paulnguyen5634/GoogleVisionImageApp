@@ -1,6 +1,7 @@
 from merge_images import mergeIMGS
 from functions import createFolder, folderfiles, move_to_processedArchive
 from format_images import convert_pdf_to_image, convert_pdf_to_image_and_back, format_images_and_merge_to_pdf
+from translate_images import translate_images, convert_images_to_pdf_and_merge
 import os
 
 def main():
@@ -31,18 +32,34 @@ def main():
         move_to_processedArchive(user_requested_path)
         return
     
+    def translate_images_action():
+        user_requested_path, filename = folderfiles(queueFldr)
+        
+        # If the file is a pdf, split the pdf -> format -> merge back
+        if filename[-4:] == '.pdf':
+            filename = filename[:-4]
+            output_pdf_path = f'transformed/Translated/{filename}_translated.pdf'
+            print("Translating Images...")
+            modified_png_lst = translate_images(user_requested_path, filename)
+            convert_images_to_pdf_and_merge(modified_png_lst, filename, output_pdf_path)
+            return
+        
+        output_pdf_path = f'transformed/Translated/{filename}_translated.pdf'
+        print("Translating Images...")
+        modified_png_lst = translate_images(user_requested_path, filename)
+        convert_images_to_pdf_and_merge(modified_png_lst, filename, output_pdf_path)
+        return
+    
     def exit_action():
         print("Exiting the app. Goodbye!")
         exit()  # Exits the program
     
-
-
     actions = {
         '0': exit_action,
         '1': merge_images_action,
         '2': format_images_action,
         # Add additional actions here as needed, such as:
-        # '3': translate_images_action,
+        '3': translate_images_action,
         # '4': split_pdf_action,
     }
 
