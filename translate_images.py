@@ -508,8 +508,3 @@ def convert_images_to_pdf_and_merge(modified_png_lst, filename, output_directory
         output_file.write(merged_pdf_bytes.getvalue())
 
     return 
-
-'''path = 'ProcessingQueue\\Witches - Training Ritual'
-filename = 'Witches - Training Ritual'
-modified_png_lst = translate_images(path, filename)
-convert_images_to_pdf_and_merge(modified_png_lst, filename)'''
