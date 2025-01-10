@@ -28,6 +28,17 @@ def detect_text(path):
     response = client.text_detection(image=image)
     texts = response.text_annotations 
 
+    if texts:
+        detected_text = texts[0].description
+        detected_language = texts[0].locale
+
+        if detected_language == 'zh':
+            print("Detected language: Chinese")
+        elif detected_language == 'ja':
+            print("Detected language: Japanese")
+        else:
+            print(f"Detected language: {detected_language}")
+
     return texts
 
 def is_box_inside(outer_box, inner_box):
@@ -240,9 +251,6 @@ def main():
         # Draw combined boxes
         draw = ImageDraw.Draw(img)
 
-        '''for box in combined_boxes:
-            # Draw the final rectangles on the image
-            draw.rectangle(box, outline='white', fill = 'white', width=2)'''
         # Save the image with combined boxes
 
         for box, text_list in dict_from_lists.items():
@@ -252,11 +260,6 @@ def main():
             print(box)
             width = right - left
             height = bottom - top
-
-            '''print('Width')
-            print(width)
-            print('Height')
-            print(height)'''
 
             # Checking if the box is height biased
             if 10*width < height:
@@ -268,12 +271,6 @@ def main():
                 height = bottom - top
 
                 box = (left, top, right, bottom)
-                '''print('New Box')
-                print(box)
-                print('New Width')
-                print(width)
-                print('New Height')
-                print(height)'''
 
             elif width < ((1/2)*height):
                 # Lets do 10% width on each ends for a total of 20% increase in width

@@ -4,6 +4,7 @@ import fitz  # PyMuPDF
 from PIL import Image
 import os
 import shutil
+import re
 import requests
 from google.cloud import vision
 import textwrap
@@ -12,6 +13,7 @@ import math
 from deep_translator import GoogleTranslator, single_detection
 import time
 from functions import createFolder, folderfiles
+from deep_translator.exceptions import LanguageNotSupportedException
 import nltk
 # nltk.download('words')
 from nltk.corpus import words
@@ -32,7 +34,47 @@ def detect_text(path):
     response = client.text_detection(image=image)
     texts = response.text_annotations 
 
+    if texts:
+        detected_text = texts[0].description
+        detected_language = texts[0].locale
+
+        if detected_language == 'zh':
+            print("Detected language: Chinese")
+        elif detected_language == 'ja':
+            print("Detected language: Japanese")
+        else:
+            print(f"Detected language: {detected_language}")
+
     return texts
+
+def new_detect_text(image_bytes):
+    """Detects text in the given image bytes."""
+    client = vision.ImageAnnotatorClient()
+
+    # Create an Image object using the bytes content
+    image = vision.Image(content=image_bytes)
+
+    # Perform text detection
+    response = client.text_detection(image=image)
+    texts = response.text_annotations
+
+    if response.error.message:
+        raise Exception(f"API Error: {response.error.message}")
+    
+    detected_language = None
+    
+    if texts:
+        detected_text = texts[0].description
+        detected_language = texts[0].locale
+
+        if detected_language == 'zh':
+            print("Detected language: Chinese")
+        elif detected_language == 'ja':
+            print("Detected language: Japanese")
+        else:
+            print(f"Detected language: {detected_language}")
+
+    return texts, detected_language
 
 def is_box_inside(outer_box, inner_box):
     """
@@ -176,34 +218,6 @@ def convert_image_to_bytes(image):
     image_bytes.seek(0)
     return image_bytes.getvalue()
 
-def new_detect_text(image_bytes):
-    """Detects text in the given image bytes."""
-    client = vision.ImageAnnotatorClient()
-
-    # Create an Image object using the bytes content
-    image = vision.Image(content=image_bytes)
-
-    # Perform text detection
-    response = client.text_detection(image=image)
-    texts = response.text_annotations
-
-    if response.error.message:
-        raise Exception(f"API Error: {response.error.message}")
-
-    return texts
-
-def image_to_pdf_in_memory(image):
-    # Create a BytesIO object to store the PDF in memory
-    pdf_bytes = BytesIO()
-
-    # Save the PIL Image as a PDF into the BytesIO stream
-    image.save(pdf_bytes, format="PDF")
-
-    # Reset the stream position to the beginning
-    pdf_bytes.seek(0)
-
-    return pdf_bytes
-
 def get_png_images_from_folder(folder_path, extensions=("png", "jpg", "jpeg")):
     """Reads images with specified extensions from a folder and returns a list of in-memory images (BytesIO objects)."""
     images = []
@@ -223,6 +237,33 @@ def get_png_images_from_folder(folder_path, extensions=("png", "jpg", "jpeg")):
                 img_bytes.seek(0)
                 images.append(img_bytes)
     return images
+
+def get_png_images_from_folder(folder_path, extensions=("png", "jpg", "jpeg")):
+    """Reads images with specified extensions from a folder and returns a list of in-memory images (BytesIO objects)."""
+    images = []
+    # Check if the folder exists
+    if not os.path.exists(folder_path):
+        print(f"Folder does not exist: {folder_path}")
+        return images
+    
+    print(f"Reading files from folder: {folder_path}")
+    
+    # Define a custom sorting key function
+    def numerical_sort_key(filename):
+        return [int(part) if part.isdigit() else part for part in re.split(r'(\d+)', filename)]
+    
+    # Iterate over files in the folder
+    for filename in sorted(os.listdir(folder_path), key=numerical_sort_key):
+        # Check if the file has an acceptable extension
+        if any(filename.lower().endswith(ext) for ext in extensions):
+            image_path = os.path.join(folder_path, filename)
+            # Read the file as bytes and store it in-memory
+            with open(image_path, "rb") as img_file:
+                img_bytes = BytesIO(img_file.read())
+                img_bytes.seek(0)
+                images.append(img_bytes)
+    return images
+
 
 def translate_images(path, filename):
     # If the file is a pdf, split the pdf -> translate each image in memory -> merge back into translated folder
@@ -249,7 +290,7 @@ def translate_images(path, filename):
 
         # Detect text
         try:
-            texts = new_detect_text(img)
+            texts, detected_language = new_detect_text(img)
         except:
             print('DNS Error')
             time.sleep(5)
@@ -375,15 +416,24 @@ def translate_images(path, filename):
                 box = (left, top, right, bottom)
 
             text = ' '.join(text_list)
-
+            translated = None
             while True:
                 try:
-                    translated = GoogleTranslator(source='chinese (simplified)', target='english').translate(text)
+                    translated = GoogleTranslator(source=detected_language, target='english').translate(text)
                     break
                 except requests.exceptions.ConnectionError as e:
                     print("Connection error: Unable to reach Google Translate API")
                     time.sleep(2)
+                except LanguageNotSupportedException as e:
+                    if detected_language == 'zh':
+                        translated = GoogleTranslator(source='chinese (simplified)', target='english').translate(text)
+                        break
+                    else:
+                        print(f"Not Supported Language: {detected_language}")
+                        time.sleep(2)
+                        break
 
+            
             if translated is None:
                 print('Len is None')
                 continue
@@ -478,6 +528,18 @@ def translate_images(path, filename):
         #img.show()
 
     return modified_png_lst
+
+def image_to_pdf_in_memory(image):
+    # Create a BytesIO object to store the PDF in memory
+    pdf_bytes = BytesIO()
+
+    # Save the PIL Image as a PDF into the BytesIO stream
+    image.save(pdf_bytes, format="PDF", resolution=100.0)
+
+    # Reset the stream position to the beginning
+    pdf_bytes.seek(0)
+
+    return pdf_bytes
 
 def convert_images_to_pdf_and_merge(modified_png_lst, filename, output_directory):
 

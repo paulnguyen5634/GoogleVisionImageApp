@@ -3,35 +3,60 @@ Merges a folder of individual pdf's into a singular pdf file
 
 '''
 
-from functions import human_sort, alphanum_key, tryint
-import os
+from PyPDF2 import PdfMerger
 from PIL import Image
-from PyPDF2 import PdfFileMerger
+import os
+from functions import human_sort
 
 def mergeIMGS(path_fldr, desired_filename):
     '''
-    :param path_fldr: path to the folder of individual pdfs
-    :param desired_filename: string name of pdf
-    :return:
-    '''
-    
-    # Get the current working directory
-    cwd = os.getcwd()
-    save_location = os.path.join(cwd, 'Transformed', 'Merged', desired_filename + '.pdf')
+    Merges images and PDFs from a folder into a single PDF.
 
-    # Sort the list of files
+    :param path_fldr: Path to the folder containing images and PDFs
+    :param desired_filename: String name of the output PDF
+    :return: None
+    '''
+    # Get current working directory and define output path
+    cwd = os.getcwd()
+    save_location = os.path.join(cwd, 'Transformed', 'Merged', f'{desired_filename}.pdf')
+
+    # Sort the files naturally
     list_of_files = os.listdir(path_fldr)
     human_sort(list_of_files)
 
-    # Open images using the full path
-    images = [Image.open(os.path.join(path_fldr, img_path)).convert("RGB") for img_path in list_of_files]
+    # Initialize PdfMerger and list to track temp files
+    merger = PdfMerger()
+    temp_files = []
 
-    # Save all images as a single PDF
-    if images:
-        images[0].save(save_location, save_all=True, append_images=images[1:])
-        #print(f"Images merged successfully into {save_location}")
-    else:
-        print("No images found to merge.")
+    try:
+        for file in list_of_files:
+            file_path = os.path.join(path_fldr, file)
+            file_ext = file.lower().split('.')[-1]
 
-    print('Pages Merged!')
+            if file_ext in ['jpg', 'jpeg', 'png']:
+                # Convert images to PDF format
+                temp_pdf = os.path.join(path_fldr, f'{file}.temp.pdf')
+                with Image.open(file_path).convert("RGB") as img:
+                    img.save(temp_pdf, "PDF")
+                merger.append(temp_pdf)
+                temp_files.append(temp_pdf)  # Add temp file to list for later removal
 
+            elif file_ext == 'pdf':
+                # Append PDF directly
+                merger.append(file_path)
+
+        # Write final output
+        if merger.pages:
+            merger.write(save_location)
+            print(f"Files merged successfully into {save_location}")
+        else:
+            print("No files found to merge.")
+
+    finally:
+        # Clean up resources
+        merger.close()
+        for temp_file in temp_files:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)  # Remove temp files after merger is closed
+
+    print('Files Merged!')

@@ -9,6 +9,17 @@ from PIL import Image
 from tqdm import tqdm
 from datetime import datetime
 import io
+import re
+'''
+Works better for images in a folder as opposed to images in a PDF
+'''
+
+def natural_sort_key(s):
+    """
+    Helper function to split strings into numeric and non-numeric parts for natural sorting.
+    """
+    return [int(text) if text.isdigit() else text.lower() for text in re.split('(\d+)', s)]
+
 
 def convert_pdf_to_image(fic, save_folder_path):
     '''
@@ -69,21 +80,14 @@ def convert_pdf_to_image_and_back(fic, output_pdf_path):
 
         # Iterate through each page of the document
         for page in tqdm(doc):
-            dim = page.get_pixmap()
+            # Extract the pixmap for the page without resizing
+            pix = page.get_pixmap()
 
-            # Resize the image if it's too large
-            if dim.width >= 2200:
-                zoom = 1800 / dim.width
-                mat = fitz.Matrix(zoom, zoom)
-                pix = page.get_pixmap(matrix=mat)
-            else:
-                pix = page.get_pixmap()
-
-            # Convert pixmap to a PIL Image
+            # Convert the pixmap to a PIL Image
             img_data = pix.tobytes(output="png")
             img = Image.open(io.BytesIO(img_data))
 
-            # Format the image (e.g., resize, convert to RGB)
+            # Ensure the image is in RGB format for compatibility
             img = img.convert("RGB")
 
             # Append the image to the list for PDF conversion
@@ -115,8 +119,11 @@ def format_images_and_merge_to_pdf(image_folder_path, output_pdf_path):
     images = []
     valid_extensions = ('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')
 
-    # List all image files in the folder
-    image_files = sorted([f for f in os.listdir(image_folder_path) if f.lower().endswith(valid_extensions)])
+    # List all image files in the folder and sort them naturally
+    image_files = sorted(
+        [f for f in os.listdir(image_folder_path) if f.lower().endswith(valid_extensions)],
+        key=natural_sort_key
+    )
 
     if not image_files:
         print("No valid image files found in the folder.")
