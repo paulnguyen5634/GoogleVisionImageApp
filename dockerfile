@@ -1,29 +1,50 @@
-# syntax=docker/dockerfile:1
-FROM python:3.12-slim
+# ---- Base image -------------------------------------------------------------
+FROM python:3.11-slim
 
-# -- Build args let devcontainer set your host UID/GID so files aren't owned by root
-ARG UID=1000
-ARG GID=1000
-
-# -- Basic env for clean, chatty Python and smaller images
+# ---- Environment ------------------------------------------------------------
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    NLTK_DATA=/usr/local/nltk_data
 
-# -- Create a non-root user that matches host uid/gid (for clean file perms)
-RUN groupadd -g ${GID} dev && \
-    useradd -m -u ${UID} -g ${GID} dev
+# ---- System packages for OpenCV, pdf2image, PyMuPDF, OCR, etc. --------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    poppler-utils \
+    tesseract-ocr \
+    ghostscript \
+    libglib2.0-0 \
+    libgl1 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+ && rm -rf /var/lib/apt/lists/*
 
-# -- Workdir inside the container (your repo will be bind-mounted here)
+# ---- App setup --------------------------------------------------------------
 WORKDIR /app
 
-# -- Install Python deps separately to leverage Docker layer caching
-COPY requirements.txt /app/requirements.txt
-RUN pip install --upgrade pip && \
-    pip install -r /app/requirements.txt
+# Copy only requirements first to leverage Docker layer caching
+COPY requirements.txt ./
 
-# -- Use non-root by default
-USER dev
+# Install Python deps
+RUN python -m pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# -- No forced entrypoint; you'll bind-mount code and run whatever you want
-CMD ["bash"]
+# ---- Pre-download NLTK data (words corpus) ----------------------------------
+RUN python - <<'PY'
+import nltk, os
+dl_dir = os.environ.get("NLTK_DATA", "/usr/local/nltk_data")
+nltk.download('words', download_dir=dl_dir)
+# If you later need more, add them here too (uncomment as needed):
+# for pkg in ['punkt','stopwords','wordnet','omw-1.4','averaged_perceptron_tagger']:
+#     nltk.download(pkg, download_dir=dl_dir)
+PY
+
+# ---- Copy the rest of the application ---------------------------------------
+COPY . .
+
+# ---- Default command --------------------------------------------------------
+# Adjust if your entrypoint is different
+CMD ["python", "main.py"]
+
+
